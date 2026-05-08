@@ -39,6 +39,7 @@ DATABASE_URL="postgresql://postgres:Siranjeevi@123@localhost:5432/maintenance_ch
 ```
 Run migrations and seed:
 ```bash
+npx prisma generate
 npx prisma migrate dev --name init
 npm run seed
 npm run dev
