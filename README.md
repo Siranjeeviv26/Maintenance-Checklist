@@ -93,3 +93,16 @@ Relationships:
   - Frontend (Vercel/Netlify)
   - Backend (Render/Railway)
   - PostgreSQL host (Railway/Supabase depending on free tier availability)
+
+ ##sample credentials
+-ADMIN
+  Email:    admin@example.com
+  Password: Admin@123
+
+-STAFF
+  Email:    staff@example.com
+  Password: Staff@123
+
+-SUPERVISOR
+  Email:    supervisor@example.com
+  Password: Supervisor@123
