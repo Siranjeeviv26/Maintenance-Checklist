@@ -1,0 +1,299 @@
+SETUP & TESTING GUIDE
+=====================
+
+Prerequisites
+-------------
+1. PostgreSQL
+   - Ensure PostgreSQL server is running (Default port 5432)
+
+2. Node.js
+   - Install Node.js on your machine
+
+3. Database
+   - Create an empty PostgreSQL database named:
+     maintenance_checklist_system
+
+   - Or use the database name configured in DATABASE_URL
+
+
+==================================================
+PART A — BACKEND SETUP
+==================================================
+
+1. Open terminal and navigate to:
+
+   c:\xampp\htdocs\task\server
+
+2. Copy environment file:
+
+   .env.example  →  .env
+
+3. Edit the .env file
+
+   Set DATABASE_URL using your PostgreSQL credentials.
+
+   Example:
+
+   postgresql://postgres:Siranjeevi@123@localhost:5432/maintenance_checklist_system?schema=public
+
+   Notes:
+   - Update username/password if needed
+   - The sample .env.example may contain:
+       root:password
+     Replace it with your actual credentials.
+
+4. Keep backend port:
+
+   PORT=5000
+
+   Change only if necessary.
+   If changed, also update frontend API URL.
+
+5. Install dependencies:
+
+   npm install
+
+6. Generate Prisma client:
+
+   npx prisma generate
+
+7. Run database migrations:
+
+   npx prisma migrate dev
+
+   Example:
+
+   npx prisma migrate dev --name init
+
+8. Seed demo data:
+
+   npm run seed
+
+   This creates:
+   - Demo users
+   - Sample data
+
+9. Start backend server:
+
+   npm run dev
+
+10. Backend should run at:
+
+   http://localhost:5000
+
+
+--------------------------------------------------
+Quick API Checks
+--------------------------------------------------
+
+1. Health Check
+   http://localhost:5000/api/health
+
+2. Interactive Swagger API Docs
+   http://localhost:5000/api-docs
+   - Now includes full Request Bodies and Schemas!
+   - Supports interactive testing via "Try it out" button.
+
+3. Test Login via Swagger
+   - Open Swagger UI
+   - Find POST /auth/login
+   - Use seeded credentials: admin@example.com / Admin@123
+   - Copy token from response
+   - Click "Authorize" at the top and enter: Bearer <token>
+
+
+
+==================================================
+PART B — FRONTEND SETUP
+==================================================
+
+1. Open a new terminal and navigate to:
+
+   c:\xampp\htdocs\task\client
+
+2. Copy environment file:
+
+   .env.example  →  .env
+
+3. Verify API base URL inside .env:
+
+   VITE_API_BASE_URL=http://localhost:5000/api
+
+4. If backend uses another port,
+   update the URL accordingly.
+
+5. Install dependencies:
+
+   npm install
+
+6. Start frontend:
+
+   npm run dev
+
+7. Open application in browser:
+
+   http://localhost:5173
+
+
+==================================================
+PART C — TEST BY ROLE (UI TESTING)
+==================================================
+
+Seeded Accounts
+------------------------------
+
+ADMIN
+Email:    admin@example.com
+Password: Admin@123
+
+STAFF
+Email:    staff@example.com
+Password: Staff@123
+
+SUPERVISOR
+Email:    supervisor@example.com
+Password: Supervisor@123
+
+
+--------------------------------------------------
+Admin Testing
+--------------------------------------------------
+
+1. Log in as Admin
+2. Create or view:
+   - Stations
+   - Users
+   - Shifts
+   - Templates
+
+3. Open reports if available
+
+Confirms:
+- Admin APIs
+- JWT authentication
+- Database integration
+
+
+--------------------------------------------------
+Staff Testing
+--------------------------------------------------
+
+1. Log in as Staff
+2. Open today's shifts
+3. Open a checklist for a shift
+4. Mark checklist items
+   - Including mandatory items
+5. Submit checklist
+
+Confirms:
+- Staff workflow
+- Validation rules
+
+Expected validation:
+- Mandatory incomplete items should block submit
+- Expired shifts should block submit
+
+
+--------------------------------------------------
+Supervisor Testing
+--------------------------------------------------
+
+1. Log in as Supervisor
+2. View submissions
+3. Approve or reject submissions
+4. Add rejection comments if needed
+5. Check submission history
+
+Confirms:
+- Supervisor workflow
+- Approval validation rules
+
+Expected validation:
+- Incomplete mandatory items block approval
+
+
+==================================================
+PART D — OPTIONAL API-ONLY TESTING
+==================================================
+
+1. Open Swagger:
+
+   http://localhost:5000/api-docs
+
+2. Login and get JWT token
+
+3. Click "Authorize"
+
+4. Enter:
+
+   Bearer <token>
+
+5. Test endpoints such as:
+
+   GET /auth/me
+
+6. Test role-specific APIs:
+
+   /admin/...
+   /staff/...
+   /supervisor/...
+
+Expected:
+- Correct role → success
+- Wrong role → forbidden/authorization errors
+
+
+==================================================
+TROUBLESHOOTING
+==================================================
+
+1. Database Connection Errors
+------------------------------
+
+Possible causes:
+- PostgreSQL not running
+- Wrong DATABASE_URL
+- Wrong PostgreSQL password
+- Database does not exist
+
+
+2. CORS / Network Errors
+------------------------------
+
+Possible causes:
+- Backend server not running
+- Wrong VITE_API_BASE_URL
+- CLIENT_URL mismatch in backend .env
+
+Expected frontend URL:
+http://localhost:5173
+
+
+3. Empty Staff Shifts
+------------------------------
+
+Possible causes:
+- Seed data does not include today's shift
+- Shift dates are outdated
+
+Possible fixes:
+- Create today's shift via Admin
+- Adjust shift dates in DB
+- Modify seed data
+
+
+==================================================
+NOTES
+==================================================
+
+If backend port changes from 5000:
+- Update frontend .env
+- Restart frontend server
+
+If .env values change:
+- Restart related servers
+
+Recommended startup order:
+1. MySQL
+2. Backend
+3. Frontend
