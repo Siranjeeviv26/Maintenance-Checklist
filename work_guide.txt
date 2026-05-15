@@ -3,17 +3,12 @@ SETUP & TESTING GUIDE
 
 Prerequisites
 -------------
-1. PostgreSQL
-   - Ensure PostgreSQL server is running (Default port 5432)
+1. MongoDB
+   - Option A (Local): Install MongoDB Community and ensure it is running (default port 27017)
+   - Option B (Atlas): Create a free cluster at https://cloud.mongodb.com and get your connection string
 
 2. Node.js
-   - Install Node.js on your machine
-
-3. Database
-   - Create an empty PostgreSQL database named:
-     maintenance_checklist_system
-
-   - Or use the database name configured in DATABASE_URL
+   - Install Node.js (v18 or later recommended)
 
 
 ==================================================
@@ -22,62 +17,45 @@ PART A — BACKEND SETUP
 
 1. Open terminal and navigate to:
 
-   c:\xampp\htdocs\task\server
+   c:\Users\WELCOME\OneDrive\Desktop\Maintenance-Checklist\server
 
-2. Copy environment file:
-
-   .env.example  →  .env
-
-3. Edit the .env file
-
-   Set DATABASE_URL using your PostgreSQL credentials.
-
-   Example:
-
-   postgresql://postgres:Siranjeevi@123@localhost:5432/maintenance_checklist_system?schema=public
-
-   Notes:
-   - Update username/password if needed
-   - The sample .env.example may contain:
-       root:password
-     Replace it with your actual credentials.
-
-4. Keep backend port:
-
-   PORT=5000
-
-   Change only if necessary.
-   If changed, also update frontend API URL.
-
-5. Install dependencies:
+2. Install dependencies:
 
    npm install
 
-6. Generate Prisma client:
+3. Configure environment:
 
-   npx prisma generate
+   Edit the .env file and set MONGO_URI to your database connection string.
 
-7. Run database migrations:
+   Local MongoDB example:
+   MONGO_URI=mongodb://localhost:27017/maintenance_checklist_development
 
-   npx prisma migrate dev
+   MongoDB Atlas example:
+   MONGO_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/maintenance_checklist_production?appName=Cluster0
 
-   Example:
+   Other .env settings:
+   PORT=5000
+   NODE_ENV=development          (use "production" for Atlas)
+   JWT_SECRET=change-this-to-a-long-secret
+   JWT_EXPIRES_IN=1d
+   CLIENT_URL=http://localhost:5173
 
-   npx prisma migrate dev --name init
-
-8. Seed demo data:
+4. Seed the database with default accounts:
 
    npm run seed
 
-   This creates:
-   - Demo users
-   - Sample data
+   This creates the three default accounts defined in src/seed-data.json.
+   To add or change seed accounts, edit src/seed-data.json — no code changes needed.
 
-9. Start backend server:
+5. Start the backend server:
 
+   Development (auto-restart on file changes):
    npm run dev
 
-10. Backend should run at:
+   Production:
+   npm start
+
+6. Backend runs at:
 
    http://localhost:5000
 
@@ -91,16 +69,8 @@ Quick API Checks
 
 2. Interactive Swagger API Docs
    http://localhost:5000/api-docs
-   - Now includes full Request Bodies and Schemas!
-   - Supports interactive testing via "Try it out" button.
-
-3. Test Login via Swagger
-   - Open Swagger UI
-   - Find POST /auth/login
-   - Use seeded credentials: admin@example.com / Admin@123
-   - Copy token from response
-   - Click "Authorize" at the top and enter: Bearer <token>
-
+   - Supports interactive testing via "Try it out"
+   - Authorize with: Bearer <token>
 
 
 ==================================================
@@ -109,191 +79,210 @@ PART B — FRONTEND SETUP
 
 1. Open a new terminal and navigate to:
 
-   c:\xampp\htdocs\task\client
+   c:\Users\WELCOME\OneDrive\Desktop\Maintenance-Checklist\client
 
-2. Copy environment file:
-
-   .env.example  →  .env
-
-3. Verify API base URL inside .env:
-
-   VITE_API_BASE_URL=http://localhost:5000/api
-
-4. If backend uses another port,
-   update the URL accordingly.
-
-5. Install dependencies:
+2. Install dependencies:
 
    npm install
 
-6. Start frontend:
+3. Configure environment:
+
+   Edit (or create) client/.env and verify:
+
+   VITE_API_BASE_URL=http://localhost:5000/api
+
+   If the backend uses a different port, update this URL accordingly.
+
+4. Start the frontend:
 
    npm run dev
 
-7. Open application in browser:
+5. Open the application in browser:
 
    http://localhost:5173
 
 
 ==================================================
-PART C — TEST BY ROLE (UI TESTING)
+PART C — SEEDED ACCOUNTS
 ==================================================
 
-Seeded Accounts
-------------------------------
+Accounts are defined in server/src/seed-data.json.
+Run "npm run seed" any time to restore them.
 
 ADMIN
-Email:    admin@example.com
-Password: Admin@123
+  Email:    admin@example.com
+  Password: Admin@123
 
 STAFF
-Email:    staff@example.com
-Password: Staff@123
+  Email:    staff@example.com
+  Password: Staff@123
 
 SUPERVISOR
-Email:    supervisor@example.com
-Password: Supervisor@123
+  Email:    supervisor@example.com
+  Password: Supervisor@123
 
+Notes:
+- Inactive accounts receive the message:
+  "Your account is inactive. Please contact the administrator."
+- To add more seed accounts, append entries to seed-data.json and re-run npm run seed.
+- All other users/stations/shifts/templates are managed dynamically through the Admin panel.
+
+
+==================================================
+PART D — TESTING BY ROLE (UI)
+==================================================
 
 --------------------------------------------------
 Admin Testing
 --------------------------------------------------
 
-1. Log in as Admin
-2. Create or view:
-   - Stations
-   - Users
-   - Shifts
-   - Templates
-
-3. Open reports if available
+1. Log in as Admin (admin@example.com / Admin@123)
+2. Create records under each section:
+   - Stations  — name and code required
+   - Users     — assign role (admin / staff / supervisor); toggle isActive
+   - Shifts    — select station, set times, assign staff and supervisors
+   - Templates — select station, add checklist items (mandatory flag + input type)
+3. View the Reports section for submission status summary
 
 Confirms:
-- Admin APIs
 - JWT authentication
-- Database integration
+- MongoDB CRUD operations
+- Role-based access control
 
 
 --------------------------------------------------
 Staff Testing
 --------------------------------------------------
 
-1. Log in as Staff
-2. Open today's shifts
-3. Open a checklist for a shift
-4. Mark checklist items
-   - Including mandatory items
-5. Submit checklist
+1. Log in as Staff (staff@example.com / Staff@123)
+2. "Assigned Shifts (Today)" lists shifts assigned to this user for today
+3. Click "Open Checklist" on a shift
+4. Fill in checklist items (mark mandatory items as completed)
+5. Add a staff remark if needed
+6. Click "Submit Checklist"
 
-Confirms:
-- Staff workflow
-- Validation rules
-
-Expected validation:
-- Mandatory incomplete items should block submit
-- Expired shifts should block submit
+Expected validations:
+- Mandatory items left incomplete → submission blocked
+- Shift expired (past end time) → submission blocked
 
 
 --------------------------------------------------
 Supervisor Testing
 --------------------------------------------------
 
-1. Log in as Supervisor
-2. View submissions
-3. Approve or reject submissions
-4. Add rejection comments if needed
+1. Log in as Supervisor (supervisor@example.com / Supervisor@123)
+2. View pending submissions
+3. Click Approve or Reject on a submission
+4. Add a comment or rejection reason
 5. Check submission history
 
-Confirms:
-- Supervisor workflow
-- Approval validation rules
-
-Expected validation:
-- Incomplete mandatory items block approval
+Expected validations:
+- Only "submitted" status submissions can be reviewed
+- Rejection requires a reason
 
 
 ==================================================
-PART D — OPTIONAL API-ONLY TESTING
+PART E — API-ONLY TESTING (SWAGGER / POSTMAN)
 ==================================================
 
 1. Open Swagger:
-
    http://localhost:5000/api-docs
 
-2. Login and get JWT token
+2. Use POST /auth/login with credentials to get a JWT token
 
-3. Click "Authorize"
-
-4. Enter:
-
+3. Click "Authorize" at the top and enter:
    Bearer <token>
 
-5. Test endpoints such as:
+4. Test endpoints:
 
-   GET /auth/me
+   Auth:
+     GET  /auth/me
 
-6. Test role-specific APIs:
+   Admin:
+     GET/POST        /admin/stations
+     PUT/DELETE      /admin/stations/{id}
+     GET/POST        /admin/users
+     PUT/DELETE      /admin/users/{id}
+     GET/POST        /admin/shifts
+     PUT/DELETE      /admin/shifts/{id}
+     GET/POST        /admin/templates
+     PUT/DELETE      /admin/templates/{id}
+     GET             /admin/reports/checklists
 
-   /admin/...
-   /staff/...
-   /supervisor/...
+   Staff:
+     GET             /staff/my-shifts/today
+     GET             /staff/checklists/{shiftId}
+     POST            /staff/checklists/{shiftId}/submit
+
+   Supervisor:
+     GET             /supervisor/submissions
+     POST            /supervisor/submissions/{id}/approve
+     POST            /supervisor/submissions/{id}/reject
+     GET             /supervisor/history
 
 Expected:
-- Correct role → success
-- Wrong role → forbidden/authorization errors
+  - Correct role   → 200 / 201
+  - Wrong role     → 403 Forbidden
+  - Missing token  → 401 Unauthorized
 
 
 ==================================================
 TROUBLESHOOTING
 ==================================================
 
-1. Database Connection Errors
+1. MongoDB Connection Errors
 ------------------------------
-
 Possible causes:
-- PostgreSQL not running
-- Wrong DATABASE_URL
-- Wrong PostgreSQL password
-- Database does not exist
+- Local MongoDB service not running
+- Wrong MONGO_URI in .env
+- Atlas IP whitelist does not include your IP
+- Wrong Atlas username / password
 
+Fix:
+- Local: start the MongoDB service
+- Atlas: add your IP in Network Access → Add IP Address
 
-2. CORS / Network Errors
-------------------------------
-
+2. "Invalid email or password" on Login
+----------------------------------------
 Possible causes:
-- Backend server not running
-- Wrong VITE_API_BASE_URL
-- CLIENT_URL mismatch in backend .env
+- Seed has not been run yet
+- Wrong credentials
 
-Expected frontend URL:
-http://localhost:5173
+Fix:
+  cd server
+  npm run seed
 
+3. "Your account is inactive" on Login
+----------------------------------------
+The user exists but isActive is false.
+Enable the account in Admin → Users → Edit → Active user checkbox.
 
-3. Empty Staff Shifts
-------------------------------
-
+4. CORS / Network Errors
+--------------------------
 Possible causes:
-- Seed data does not include today's shift
-- Shift dates are outdated
+- Backend not running
+- Wrong VITE_API_BASE_URL in client/.env
+- CLIENT_URL mismatch in server/.env
 
-Possible fixes:
-- Create today's shift via Admin
-- Adjust shift dates in DB
-- Modify seed data
+Expected values (default):
+  client/.env  →  VITE_API_BASE_URL=http://localhost:5000/api
+  server/.env  →  CLIENT_URL=http://localhost:5173
 
+5. No Shifts Showing for Staff
+--------------------------------
+Possible causes:
+- No shift has been assigned to this staff user for today
+- Shift assignment date does not match today's date
+
+Fix:
+- Log in as Admin → Shifts → Add New
+- Set Assignment Date to today and assign the staff user
 
 ==================================================
-NOTES
+RECOMMENDED STARTUP ORDER
 ==================================================
 
-If backend port changes from 5000:
-- Update frontend .env
-- Restart frontend server
-
-If .env values change:
-- Restart related servers
-
-Recommended startup order:
-1. MySQL
-2. Backend
-3. Frontend
+1. Start MongoDB (local) or confirm Atlas is reachable
+2. Start backend:   cd server && npm run dev
+3. Start frontend:  cd client && npm run dev
+4. Open browser:    http://localhost:5173
